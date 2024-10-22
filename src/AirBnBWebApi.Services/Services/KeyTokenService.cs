@@ -1,64 +1,81 @@
-// Licensed to the .NET Foundation under one or more agreements.
-// The .NET Foundation licenses this file to you under the MIT license.
-
 using System;
 using System.Threading.Tasks;
 using AirBnBWebApi.Core.Entities;
-using AirBnBWebApi.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using AirBnBWebApi.Infrastructure.Interfaces;  // Thêm interface của repository
+using AirBnBWebApi.Services.Interfaces;
 
-namespace AirBnBWebApi.Services.Services;
-
-public class KeyTokenService
+namespace AirBnBWebApi.Services.Services
 {
-    private readonly AirBnBDbContext _context;
-
-    public KeyTokenService(AirBnBDbContext context)
+    public class KeyTokenService : IKeyTokenService
     {
-        _context = context;
-    }
+        private readonly IKeyTokenRepository _keyTokenRepository;
 
-    // Create keyToken
-    public async Task<(bool status, int code, KeyToken keyToken)> CreateKeyTokenAsync(Guid userId, string publicKey, string privateKey)
-    {
-        var token = new KeyToken
+        public KeyTokenService(IKeyTokenRepository keyTokenRepository)
         {
-            UserId = userId,
-            PublicKey = publicKey,
-            PrivateKey = privateKey,
-            Timestamp = DateTime.UtcNow
-        };
+            _keyTokenRepository = keyTokenRepository;
+        }
 
-        try
+        // Tạo mới KeyToken
+        public async Task<(bool status, int code, KeyToken keyToken)> CreateKeyTokenAsync(Guid userId, string publicKey, string privateKey)
         {
-            await _context.KeyTokens.AddAsync(token);
-            int result = await _context.SaveChangesAsync();
-
-            if (result > 0)
+            // Kiểm tra xem đã có KeyToken cho userId này hay chưa
+            var existingToken = await _keyTokenRepository.GetByUserIdAsync(userId);
+            if (existingToken != null)
             {
-                return (true, 201, token);
+                return (false, 409, null);
             }
-            else
+
+            var token = new KeyToken
             {
+                UserId = userId,
+                PublicKey = publicKey,
+                PrivateKey = privateKey,
+                Timestamp = DateTime.UtcNow
+            };
+
+            try
+            {
+                // Thêm vào database qua repository
+                var newToken = await _keyTokenRepository.AddAsync(token);
+
+                if (newToken != null)
+                {
+                    return (true, 201, newToken);
+                }
+                else
+                {
+                    return (false, 500, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Bắt ngoại lệ nếu có lỗi xảy ra
                 return (false, 500, null);
             }
         }
-        catch (Exception ex)
-        {
-            // Bắt ngoại lệ nếu có lỗi xảy ra và trả về mã trạng thái lỗi
-            return (false, 500, null);
-        }
-    }
-    public async Task<(bool status, string publicKey)> GetUserPublicKeyAsync(Guid userId)
-    {
-        var keyToken = await _context.KeyTokens.AsNoTracking().FirstOrDefaultAsync(k => k.UserId == userId);
 
-        if (keyToken == null)
+        // Lấy PublicKey của người dùng
+        public async Task<(bool status, string publicKey)> GetUserPublicKeyAsync(Guid userId)
         {
-            return (false, null);
+            var keyToken = await _keyTokenRepository.GetByUserIdAsync(userId);
+            if (keyToken == null)
+            {
+                return (false, null);
+            }
+
+            return (true, keyToken.PublicKey);
         }
 
-        return (true, keyToken.PublicKey);
+        // Lấy PrivateKey của người dùng
+        public async Task<(bool status, string privateKey)> GetUserPrivateKeyAsync(Guid userId)
+        {
+            var keyToken = await _keyTokenRepository.GetByUserIdAsync(userId);
+            if (keyToken == null)
+            {
+                return (false, null);
+            }
+
+            return (true, keyToken.PrivateKey);
+        }
     }
 }
-
