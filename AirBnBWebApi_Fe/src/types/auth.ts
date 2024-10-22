@@ -19,3 +19,16 @@ export interface User {
     refreshToken: string;
   }
 }
+
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface RegisterPayload {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber: string;
+}

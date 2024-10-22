@@ -3,14 +3,16 @@ import axios from "axios";
 import { decodeToken, isTokenExpired } from "@/utils/jwt";
 import { CONFIG } from "@/config/appConfig";
 import { history } from "@/main";
+import { notify } from "@/services/notifications/notificationService"; // Import notify
 
-const https = axios.create({
+const axiosClient = axios.create({
   baseURL: CONFIG.API.BASE_URL,
   headers: CONFIG.API.HEADERS,
   timeout: CONFIG.API.TIMEOUT,
 });
 
-https.interceptors.request.use(
+// Request interceptor
+axiosClient.interceptors.request.use(
   async (config: any) => {
     const user = localStorage.getItem('user');
 
@@ -20,7 +22,7 @@ https.interceptors.request.use(
       const decodedToken: JwtPayload | null = decodeToken(accessToken);
 
       if (isTokenExpired(accessToken)) {
-        alert('Token has expired. Please login again.');
+        notify('Token has expired. Please login again.', 'error'); // Sử dụng notify
         history.push('/login');
         return Promise.reject(new Error('Token has expired'));
       }
@@ -28,19 +30,45 @@ https.interceptors.request.use(
       // Thêm accessToken vào header
       config.headers.Authorization = `Bearer ${accessToken}`;
 
-      // Kiểm tra role của người dùng (ví dụ nếu cần role đặc biệt để truy cập)
+      // Role-based handling
       if (decodedToken?.Role === 'Admin') {
-        console.log('User is an admin');
+        console.log('Người dùng là Admin');
+      } else if (decodedToken?.Role === 'Host') {
+        console.log('Người dùng là Host');
+      } else {
+        console.log('Người dùng là User');
       }
     }
 
     return config;
   },
   (error) => {
+    notify('Request error. Please try again later.', 'error'); // Sử dụng notify
     return Promise.reject(error);
   }
 );
 
+// Response interceptor
+axiosClient.interceptors.response.use(
+  (response) => {
+    // Xử lý khi response thành công
+    return response;
+  },
+  (error) => {
+    const status = error.response?.status;
 
-export default https;
+    if (status === 401) {
+      notify('You are not authorized. Please login.', 'error'); // Sử dụng notify
+      history.push('/login');
+    } else if (status === 403) {
+      notify('Access denied. You do not have permission to access this resource.', 'warning'); // Sử dụng notify
+      history.push('/forbidden');
+    } else if (status === 500) {
+      notify('Server error. Please try again later.', 'error'); // Sử dụng notify
+    }
 
+    return Promise.reject(error);
+  }
+);
+
+export default axiosClient;

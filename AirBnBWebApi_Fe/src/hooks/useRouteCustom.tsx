@@ -56,13 +56,21 @@ const useRouteCustom = () => {
 
   // Guest routes (login, register)
   const guestRoutes = [
-    { path: ROUTES.HOME, element: <Suspense fallback={<Loading />}><HomePage /></Suspense> },
+    {
+      path: ROUTES.HOME,
+      element: <UserTemplate />,
+      children: [
+        { path: ROUTES.HOME, element: <Suspense fallback={<Loading />}><HomePage /></Suspense> },
+        { path: ROUTES.ROOM_DETAIL, element: <Suspense fallback={<Loading />}><DetailPage /></Suspense> },
+        { path: ROUTES.SEARCH, element: <Suspense fallback={<Loading />}><SearchPage /></Suspense> },
+
+      ]
+    },
     { path: ROUTES.LOGIN, element: <Suspense fallback={<Loading />}><LoginPage /></Suspense> },
     { path: ROUTES.REGISTER, element: <Suspense fallback={<Loading />}><RegisterPage /></Suspense> },
-    // Admin và Host login đều nằm ngoài các templates
-    { path: ROUTES.ADMIN_LOGIN, element: <Suspense fallback={<Loading />}><AdminLoginPage /></Suspense> },
     { path: ROUTES.HOST_LOGIN, element: <Suspense fallback={<Loading />}><HostLoginPage /></Suspense> },
-    { path: ROUTES.NOT_FOUND, element: <Suspense fallback={<Loading />}><NotFoundPage /></Suspense> },
+    { path: ROUTES.HOST_REGISTER, element: <Suspense fallback={<Loading />}><HostRegisterPage /></Suspense> },
+    { path: ROUTES.ADMIN_LOGIN, element: <Suspense fallback={<Loading />}><AdminLoginPage /></Suspense> },
   ];
 
   // Admin routes

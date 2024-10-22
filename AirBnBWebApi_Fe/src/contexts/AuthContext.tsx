@@ -13,11 +13,11 @@ export const AuthContext = createContext<AuthContextProps>({
 });
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(storage.get(storageKeys.USER));
+  const [user, setUser] = useState<User | null>(storage.get(storageKeys.USER_INFO));
 
   useEffect(() => {
     const handleStorageChange = () => {
-      setUser(storage.get(storageKeys.USER));
+      setUser(storage.get(storageKeys.USER_INFO));
     };
 
     window.addEventListener('storage', handleStorageChange);

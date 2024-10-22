@@ -2,49 +2,60 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using AirBnBWebApi.Services.Utils;
 using System.Threading.Tasks;
 using AirBnBWebApi.Core.Entities;
-using AirBnBWebApi.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
+using AirBnBWebApi.Infrastructure.Interfaces;
+using AirBnBWebApi.Services.Interfaces;
+using AirBnBWebApi.Api.DTOs;
 
 namespace AirBnBWebApi.Services.Services;
-
-public class AuthService
+public class AuthService : IAuthService
 {
-    private readonly AirBnBDbContext _context;
     private readonly JwtService _jwtService;
-    private readonly KeyTokenService _keyTokenService;
+    private readonly IKeyTokenService _keyTokenService;
+    private readonly IUserRepository _userRepository;
 
-    public AuthService(AirBnBDbContext context, JwtService jwtService, KeyTokenService keyTokenService)
+    public AuthService(JwtService jwtService, IKeyTokenService keyTokenService, IUserRepository userRepository)
     {
-        _context = context;
         _jwtService = jwtService;
         _keyTokenService = keyTokenService;
+        _userRepository = userRepository;
     }
 
+    // Tạo chuỗi ngẫu nhiên làm khóa (sử dụng cho các key public/private)
     private static string GenerateRandomHexString(int length)
     {
         byte[] randomBytes = new byte[length];
-        using (var rng = RandomNumberGenerator.Create())
+        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
         {
             rng.GetBytes(randomBytes);
         }
         return BitConverter.ToString(randomBytes).Replace("-", "").ToLower();
     }
 
-    public async Task<(bool status, string email, string FullName, string accessToken, string refreshToken, string message)> Register(string email, string fullName, string password, string phoneNumber)
+    // Xác thực mật khẩu người dùng
+    private bool VerifyPassword(string password, string storedHash)
     {
-        var userExist = await _context.Users.AnyAsync(u => u.Email == email);
-        if (userExist)
+        return BCrypt.Net.BCrypt.Verify(password, storedHash);
+    }
+
+    // Đăng ký người dùng mới
+    public async Task<RegisterResultDTO> Register(string email, string fullName, string password, string phoneNumber)
+    {
+        // Kiểm tra xem người dùng với email này đã tồn tại hay chưa
+        if (await _userRepository.UserExistsAsync(email))
         {
-            return (false, null, null, null, null, "Email is already in use.");
+            return new RegisterResultDTO
+            {
+                Status = false,
+                Message = "Email is already in use."
+            };
         }
 
+        // Tạo người dùng mới
         var user = new User
         {
-            Id = Guid.NewGuid(), // Nếu Id là kiểu Guid, tạo Guid mới.
+            Id = Guid.NewGuid(),
             Email = email,
             FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
@@ -57,35 +68,92 @@ public class AuthService
             UpdatedAt = DateTime.UtcNow
         };
 
-        try
+        // Lưu người dùng mới vào cơ sở dữ liệu
+        var addUserSuccess = await _userRepository.AddAsync(user);
+        if (addUserSuccess == null)
         {
-            var newUser = _context.Users.Add(user);
-            var result = await _context.SaveChangesAsync();
-            if (result > 0)
+            return new RegisterResultDTO
             {
-                string privateKey = GenerateRandomHexString(64);
-                string publicKey = GenerateRandomHexString(64);
-
-                var (status, code, keyToken) = await _keyTokenService.CreateKeyTokenAsync(newUser.Entity.Id, publicKey, privateKey);
-
-                if (!status && keyToken == null)
-                {
-                    return (false, null, null, null, null, "KeyToken creation failed.");
-                }
-
-                var (accessToken, refreshToken) = _jwtService.GenerateTokens(newUser.Entity.Id, newUser.Entity.Email, newUser.Entity.IsHost, newUser.Entity.IsAdmin, newUser.Entity.isUser, keyToken.PublicKey, keyToken.PrivateKey);
-
-                return (true, user.Email, user.FullName, accessToken, refreshToken, "User registered successfully.");
-            }
-            else
-            {
-                return (false, null, null, null, null, "User registration failed. No changes were made.");
-            }
+                Status = false,
+                Message = "User registration failed. No changes were made."
+            };
         }
-        catch (Exception ex)
+
+        // Tạo khóa public và private cho người dùng
+        string privateKey = GenerateRandomHexString(64);
+        string publicKey = GenerateRandomHexString(64);
+
+        // Tạo KeyToken cho người dùng và lưu vào cơ sở dữ liệu
+        var (keyTokenStatus, code, keyToken) = await _keyTokenService.CreateKeyTokenAsync(user.Id, publicKey, privateKey);
+        if (!keyTokenStatus || keyToken == null)
         {
-            return (false, null, null, null, null, $"An error occurred: {ex.Message}");
+            return new RegisterResultDTO
+            {
+                Status = false,
+                Message = "KeyToken creation failed."
+            };
         }
+
+        // Tạo JWT accessToken và refreshToken
+        var (accessToken, refreshToken) = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, keyToken.PublicKey, keyToken.PrivateKey);
+
+        // Trả về kết quả đăng ký thành công với JWT tokens
+        return new RegisterResultDTO
+        {
+            Status = true,
+            Email = user.Email,
+            FullName = user.FullName,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            Message = "User registered successfully."
+        };
     }
 
+    // Đăng nhập người dùng
+    public async Task<LoginResultDTO> Login(string email, string password)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+
+        if (user == null || !VerifyPassword(password, user.PasswordHash))
+        {
+            return new LoginResultDTO
+            {
+                Status = false,
+                Message = "Email or password is incorrect"
+            };
+        }
+
+        // Lấy publicKey và privateKey từ KeyToken của người dùng
+
+        var userPrivateKey = await _keyTokenService.GetUserPrivateKeyAsync(user.Id);
+        var userPublicKey = await _keyTokenService.GetUserPublicKeyAsync(user.Id);
+
+
+        if (!userPrivateKey.status || !userPublicKey.status)
+        {
+            return new LoginResultDTO
+            {
+                Status = false,
+                Message = "Failed to retrieve keys for user."
+            };
+        }
+
+        // Tạo accessToken và refreshToken từ JwtService
+        var (accessToken, refreshToken) = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, userPublicKey.publicKey, userPrivateKey.privateKey);
+
+        // Trả về kết quả đăng nhập thành công
+        return new LoginResultDTO
+        {
+            Status = true,
+            User = user,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken
+        };
+    }
+
+    // Reset password (chưa triển khai)
+    public Task<OperationResultDTO> ResetPassword(string email, string token, string newPassword)
+    {
+        throw new NotImplementedException();
+    }
 }

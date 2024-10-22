@@ -1,5 +1,5 @@
 const storageKeys = {
-  USER: "USER",
+  USER_INFO: "airBnB_userInfo",
 }
 
 export default storageKeys;

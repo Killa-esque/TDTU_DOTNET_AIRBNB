@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using AirBnBWebApi.Api.DTOs;
 using AirBnBWebApi.Core.Entities;
 
 namespace AirBnBWebApi.Services.Interfaces;
@@ -16,4 +17,7 @@ public interface IUserService
     Task CreateUserAsync(User user);
     Task UpdateUserAsync(User user);
     Task DeleteUserAsync(Guid id);
+
+
 }
+
