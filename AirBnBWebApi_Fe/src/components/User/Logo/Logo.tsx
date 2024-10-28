@@ -5,7 +5,7 @@ const Logo: React.FC = () => {
     <svg
       width={102}
       height={32}
-      className="text-red-500"
+      className="text-pinkCustom"
       style={{ display: "inline-block" }}
     >
       <path

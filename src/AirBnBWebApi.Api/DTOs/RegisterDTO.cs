@@ -25,4 +25,11 @@ public class RegisterDTO
     [Required(ErrorMessage = "Phone Number is required")]
     [Phone(ErrorMessage = "Invalid phone number format")]
     public string? PhoneNumber { get; set; }
+
+    [Required(ErrorMessage = "Role is required")]
+    public bool IsHost { get; set; }
+
+    [Required(ErrorMessage = "Role is required")]
+    public bool IsUser { get; set; }
+
 }

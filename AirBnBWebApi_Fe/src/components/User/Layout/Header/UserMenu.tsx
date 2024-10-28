@@ -1,11 +1,11 @@
+// src/components/UserMenu.tsx
 import { useCallback, useState } from "react";
-import { MenuOutlined } from "@ant-design/icons"; // Thay thế AiOutlineMenu bằng MenuOutlined từ Ant Design
-import useLoginModel from "@/hooks/useLoginModal";
-import { useRegisterModal, useRentModal } from "@/hooks";
+import { MenuOutlined } from "@ant-design/icons";
+import { useModal } from "@/contexts/ModalAuthContext";
 import MenuItem from "./MenuItem";
 import Avatar from "@/components/User/Common/Avatar";
 import { authService } from "@/services/api";
-import { history } from "@/main";
+import { useNavigate } from "react-router-dom";
 
 type SafeUser = {
   name?: string;
@@ -18,12 +18,9 @@ type Props = {
 };
 
 function UserMenu({ currentUser }: Props) {
+  const navigate = useNavigate();
+  const { openAuthModal } = useModal();
   const [isOpen, setIsOpen] = useState(false);
-
-  // Các custom hook useLoginModal, useRegisterModal, useRentModal sẽ cần định nghĩa lại nếu bạn sử dụng chúng trong React
-  const registerModel = useRegisterModal();
-  const loginModel = useLoginModel();
-  const rentModel = useRentModal();
 
   const toggleOpen = useCallback(() => {
     setIsOpen((value) => !value);
@@ -31,10 +28,10 @@ function UserMenu({ currentUser }: Props) {
 
   const onRent = useCallback(() => {
     if (!currentUser) {
-      return loginModel.onOpen();
+      return openAuthModal(true); // Mở modal đăng nhập nếu chưa đăng nhập
     }
-    rentModel.onOpen();
-  }, [currentUser, loginModel, rentModel]);
+    // Logic mở modal cho thuê nhà ở đây nếu có
+  }, [currentUser, openAuthModal]);
 
   return (
     <div className="relative">
@@ -49,7 +46,7 @@ function UserMenu({ currentUser }: Props) {
           onClick={toggleOpen}
           className="p-4 md:py-1 md:px-2 border-[1px] flex flex-row items-center gap-3 rounded-full cursor-pointer hover:shadow-md transition"
         >
-          <MenuOutlined />f
+          <MenuOutlined />
           <div className="hidden md:block">
             {currentUser ? (
               <Avatar src={currentUser?.image!} userName={currentUser?.name} />
@@ -70,27 +67,18 @@ function UserMenu({ currentUser }: Props) {
           <div className="flex flex-col cursor-pointer">
             {currentUser ? (
               <>
-                <MenuItem onClick={() => history.push("/trips")} label="My trips" />
-                <MenuItem
-                  onClick={() => history.push("/favorites")}
-                  label="My favorites"
-                />
-                <MenuItem
-                  onClick={() => history.push("/reservations")}
-                  label="My reservations"
-                />
-                <MenuItem
-                  onClick={() => history.push("/properties")}
-                  label="My properties"
-                />
+                <MenuItem onClick={() => navigate("/trips")} label="My trips" />
+                <MenuItem onClick={() => navigate("/favorites")} label="My favorites" />
+                <MenuItem onClick={() => navigate("/reservations")} label="My reservations" />
+                <MenuItem onClick={() => navigate("/properties")} label="My properties" />
                 <MenuItem onClick={onRent} label="Airbnb your home" />
                 <hr />
                 <MenuItem onClick={authService.logout} label="Logout" />
               </>
             ) : (
               <>
-                <MenuItem onClick={loginModel.onOpen} label="Login" />
-                <MenuItem onClick={registerModel.onOpen} label="Sign up" />
+                <MenuItem onClick={() => openAuthModal(true)} label="Login" />
+                <MenuItem onClick={() => openAuthModal(false)} label="Sign up" />
               </>
             )}
           </div>

@@ -21,7 +21,46 @@ export default {
         darkSecondary: '#333333', // Nền phụ (xám đậm)
         darkAccent: '#FF5A5F',    // Màu nhấn (làm dịu đi so với light mode)
         textDark: '#E0E0E0',      // Màu văn bản (trắng nhẹ)
+
+        pinkCustom: '#e91e63'
       },
+      transitionDuration: {
+        '400': '400ms',
+        '600': '600ms',
+      },
+      transitionProperty: {
+        'width': 'width',
+        'spacing': 'margin, padding',
+      },
+      keyframes: {
+        slideLeft: {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        slideRight: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
+      },
+      animation: {
+        slideLeft: 'slideLeft 400ms ease-in-out',
+        slideRight: 'slideRight 400ms ease-in-out',
+      },
+      transitionProperty: {
+        'height': 'height',
+      },
+      height: {
+        // View Height
+        'vh-10': '10vh',
+        'vh-20': '20vh',
+        'vh-30': '30vh',
+        'vh-40': '40vh',
+        'vh-50': '50vh',
+        'vh-60': '60vh',
+        'vh-70': '70vh',
+        'vh-80': '80vh',
+        'vh-90': '90vh',
+      }
     },
   },
   plugins: [],

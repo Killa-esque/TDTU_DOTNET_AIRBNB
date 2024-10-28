@@ -16,6 +16,7 @@ export const useNotification = (): NotificationContextType => {
 // NotificationProvider cung cấp logic thông báo cho toàn bộ ứng dụng
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const handleNotification = (content: string, type: "info" | "success" | "warning" | "error") => {
+    console.log(content, type)
     return toast[type](content, {
       position: "top-right",
       autoClose: 5000,
@@ -27,7 +28,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   return (
     <NotificationContext.Provider value={{ handleNotification }}>
       {children}
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={5000} />
     </NotificationContext.Provider>
   );
 };

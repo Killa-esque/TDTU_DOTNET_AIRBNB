@@ -8,9 +8,7 @@ export interface User {
   fullName: string;
   email: string;
   phoneNumber: string;
-  isHost: boolean;
-  isAdmin: boolean;
-  isUser: boolean;
+  role: string;
   avatar: string;
   createdAt: Date;
   updatedAt: Date;
@@ -31,4 +29,6 @@ export interface RegisterPayload {
   password: string;
   fullName: string;
   phoneNumber: string;
+  birthday: string;
+  gender: string;
 }

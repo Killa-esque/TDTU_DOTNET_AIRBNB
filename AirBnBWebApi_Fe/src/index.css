@@ -8,3 +8,8 @@ html,
 body {
   @apply font-cereal;
 }
+
+
+.Toastify__toast-container {
+  z-index: 9999;
+}

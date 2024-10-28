@@ -8,7 +8,8 @@ namespace AirBnBWebApi.Services.Interfaces;
 
 public interface IAuthService
 {
-    Task<RegisterResultDTO> Register(string email, string fullName, string password, string phoneNumber);
+    Task<RegisterResultDTO> Register(string email, string fullName, string password, string phoneNumber, bool isHost, bool isUser);
     Task<LoginResultDTO> Login(string email, string password);
     Task<OperationResultDTO> ResetPassword(string email, string token, string newPassword);
+    Task<RefreshTokenResultDTO> RefreshToken(string accessToken, string refreshToken);
 }

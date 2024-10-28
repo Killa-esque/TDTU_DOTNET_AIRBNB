@@ -24,11 +24,16 @@ builder.Services.AddDbContext<AirBnBDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Đăng ký Repository và Service
+// ===================== REPOSITORY ======================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IKeyTokenRepository, KeyTokenRepository>();
+
+
+// ==================== SERVICE ====================
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<KeyTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IKeyTokenService, KeyTokenService>();
 
 // JWT
 builder.Services.AddAuthentication(x =>

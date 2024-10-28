@@ -4,30 +4,33 @@
 
 namespace AirBnBWebApi.Services.Services;
 
+using AirBnBWebApi.Core.DTOs;
+using AirBnBWebApi.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-public class JwtService
+public class JwtService : IJwtService
 {
     private readonly IConfiguration _configuration;
+
     public JwtService(IConfiguration configuration)
     {
         _configuration = configuration;
     }
-    public (string accessToken, string refreshToken) GenerateTokens(Guid userId, string email, bool isHost, bool isAdmin, bool isUser, string publicKey, string privateKey)
+
+    // Generate access and refresh tokens
+    public TokenPairResultDTO GenerateTokens(Guid userId, string email, bool isHost, bool isAdmin, bool isUser, string publicKey, string privateKey)
     {
         var accessToken = CreateToken(userId, email, isHost, isAdmin, publicKey, 10, false);
-
         var refreshToken = CreateToken(userId, email, isHost, isAdmin, privateKey, 3, true);
-
-        return (accessToken, refreshToken);
+        return new TokenPairResultDTO { AccessToken = accessToken, RefreshToken = refreshToken };
     }
 
+    // Create token logic
     private string CreateToken(Guid userId, string email, bool isHost, bool isAdmin, string secret, int expirationTime, bool isCreateRefreshToken = false)
     {
         var claims = new[]
@@ -54,6 +57,7 @@ public class JwtService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
+    // Validate token
     public ClaimsPrincipal? ValidateToken(string token, string secret)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));

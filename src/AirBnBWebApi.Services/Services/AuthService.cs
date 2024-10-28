@@ -11,11 +11,11 @@ using AirBnBWebApi.Api.DTOs;
 namespace AirBnBWebApi.Services.Services;
 public class AuthService : IAuthService
 {
-    private readonly JwtService _jwtService;
+    private readonly IJwtService _jwtService;
     private readonly IKeyTokenService _keyTokenService;
     private readonly IUserRepository _userRepository;
 
-    public AuthService(JwtService jwtService, IKeyTokenService keyTokenService, IUserRepository userRepository)
+    public AuthService(IJwtService jwtService, IKeyTokenService keyTokenService, IUserRepository userRepository)
     {
         _jwtService = jwtService;
         _keyTokenService = keyTokenService;
@@ -40,7 +40,7 @@ public class AuthService : IAuthService
     }
 
     // Đăng ký người dùng mới
-    public async Task<RegisterResultDTO> Register(string email, string fullName, string password, string phoneNumber)
+    public async Task<RegisterResultDTO> Register(string email, string fullName, string password, string phoneNumber, bool isHost, bool isUser)
     {
         // Kiểm tra xem người dùng với email này đã tồn tại hay chưa
         if (await _userRepository.UserExistsAsync(email))
@@ -60,9 +60,9 @@ public class AuthService : IAuthService
             FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             PhoneNumber = phoneNumber,
-            IsHost = false,
+            IsHost = isHost,
             IsAdmin = false,
-            isUser = true,
+            isUser = isUser,
             IsDeleted = false,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -95,7 +95,7 @@ public class AuthService : IAuthService
         }
 
         // Tạo JWT accessToken và refreshToken
-        var (accessToken, refreshToken) = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, keyToken.PublicKey, keyToken.PrivateKey);
+        var tokenPair = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, keyToken.PublicKey, keyToken.PrivateKey);
 
         // Trả về kết quả đăng ký thành công với JWT tokens
         return new RegisterResultDTO
@@ -103,8 +103,8 @@ public class AuthService : IAuthService
             Status = true,
             Email = user.Email,
             FullName = user.FullName,
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
+            AccessToken = tokenPair.AccessToken,
+            RefreshToken = tokenPair.RefreshToken,
             Message = "User registered successfully."
         };
     }
@@ -139,20 +139,26 @@ public class AuthService : IAuthService
         }
 
         // Tạo accessToken và refreshToken từ JwtService
-        var (accessToken, refreshToken) = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, userPublicKey.publicKey, userPrivateKey.privateKey);
+        var tokenPair = _jwtService.GenerateTokens(user.Id, user.Email, user.IsHost, user.IsAdmin, user.isUser, userPublicKey.publicKey, userPrivateKey.privateKey);
 
         // Trả về kết quả đăng nhập thành công
         return new LoginResultDTO
         {
             Status = true,
             User = user,
-            AccessToken = accessToken,
-            RefreshToken = refreshToken
+            AccessToken = tokenPair.AccessToken,
+            RefreshToken = tokenPair.RefreshToken,
         };
     }
 
+
     // Reset password (chưa triển khai)
     public Task<OperationResultDTO> ResetPassword(string email, string token, string newPassword)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<RefreshTokenResultDTO> RefreshToken(string accessToken, string refreshToken)
     {
         throw new NotImplementedException();
     }

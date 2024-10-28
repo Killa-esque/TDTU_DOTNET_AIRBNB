@@ -1,7 +1,6 @@
 import React, { useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import qs from "query-string";
-import { history } from "@/main"; // Import history từ file main.tsx
 
 type Props = {
   icon: React.ReactNode;
@@ -10,6 +9,7 @@ type Props = {
 };
 
 function CategoryBox({ icon, label, selected }: Props) {
+  const navigate = useNavigate(); // Sử dụng useNavigate từ react-router-dom
   const [params] = useSearchParams(); // Sử dụng useSearchParams từ react-router-dom
 
   const handleClick = useCallback(() => {
@@ -39,7 +39,7 @@ function CategoryBox({ icon, label, selected }: Props) {
       { skipNull: true }
     );
 
-    history.push(url); // Sử dụng history.push để điều hướng
+    navigate(url); // Sử dụng history.push để điều hướng
   }, [label, params]);
 
   return (
