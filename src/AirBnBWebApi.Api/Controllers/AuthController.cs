@@ -4,7 +4,6 @@
 using AirBnBWebApi.Api.Helpers;
 using AirBnBWebApi.Api.DTOs;
 using AirBnBWebApi.Services.Interfaces;
-using AirBnBWebApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AirBnBWebApi.Api.Controllers;
@@ -29,7 +28,7 @@ public class AuthController : ControllerBase
         }
 
         // Gọi service để đăng ký người dùng mới
-        var result = await _authService.Register(registerDto.Email, registerDto.FullName, registerDto.Password, registerDto.PhoneNumber);
+        var result = await _authService.Register(registerDto.Email, registerDto.FullName, registerDto.Password, registerDto.PhoneNumber, registerDto.IsHost, registerDto.IsUser);
 
         if (!result.Status)
         {
@@ -78,56 +77,44 @@ public class AuthController : ControllerBase
                 result.User.IsHost,
                 result.User.IsAdmin,
                 result.User.isUser,
-                result.User.Avatar
+                result.User.Avatar,
+                token = new
+                {
+                    result.AccessToken,
+                    result.RefreshToken
+                }
             },
-            token = new
-            {
-                result.AccessToken,
-                result.RefreshToken
-            }
         }, "Login successful");
     }
 
-    // // Làm mới token (refresh token)
-    // [HttpPost("refresh-token")]
-    // public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenDTO refreshTokenDto)
-    // {
-    //     var result = await _authService.RefreshToken(refreshTokenDto.AccessToken, refreshTokenDto.RefreshToken);
+    // Làm mới token (refresh token)
+    [HttpPost("refresh-token")]
+    public async Task<RefreshTokenResultDTO> RefreshToken(string accessToken, string refreshToken)
+    {
+        // Gọi service để làm mới token
+        var result = await _authService.RefreshToken(accessToken, refreshToken);
 
-    //     if (!result.Status)
-    //     {
-    //         return ResponseHelper.BadRequest(result.Message);
-    //     }
+        return result;
+    }
 
-    //     // Trả về token mới sau khi refresh
-    //     return ResponseHelper.Success(new
-    //     {
-    //         token = new
-    //         {
-    //             result.AccessToken,
-    //             result.RefreshToken
-    //         }
-    //     }, "Token refreshed successfully");
-    // }
+    // Reset mật khẩu người dùng
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPasswordDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return ResponseHelper.BadRequest("Invalid Data", ModelState);
+        }
 
-    // // Reset mật khẩu người dùng
-    // [HttpPost("reset-password")]
-    // public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO resetPasswordDto)
-    // {
-    //     if (!ModelState.IsValid)
-    //     {
-    //         return ResponseHelper.BadRequest("Invalid Data", ModelState);
-    //     }
+        // Gọi service để reset mật khẩu
+        var result = await _authService.ResetPassword(resetPasswordDto.Email, resetPasswordDto.Token, resetPasswordDto.NewPassword);
 
-    //     // Gọi service để reset mật khẩu
-    //     var result = await _authService.ResetPassword(resetPasswordDto.Email, resetPasswordDto.Token, resetPasswordDto.NewPassword);
+        if (!result.Status)
+        {
+            return ResponseHelper.BadRequest(result.Message);
+        }
 
-    //     if (!result.Status)
-    //     {
-    //         return ResponseHelper.BadRequest(result.Message);
-    //     }
-
-    //     // Trả về kết quả reset mật khẩu thành công
-    //     return ResponseHelper.Success<object>(null, "Password reset successfully");
-    // }
+        // Trả về kết quả reset mật khẩu thành công
+        return ResponseHelper.Success<object>(null, "Password reset successfully");
+    }
 }

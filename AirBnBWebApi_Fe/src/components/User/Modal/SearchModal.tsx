@@ -1,9 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import dayjs, { Dayjs } from "dayjs";
 import qs from "query-string";
 import useSearchModal from "@/hooks/useSearchModal";
-import { history } from "@/main";
 
 import CountrySelect, { CountrySelectValue } from "@/components/User/Common/CountrySelect";
 import Modal from "./Modal";
@@ -28,6 +27,8 @@ function SearchModal() {
   const [bathroomCount, setBathroomCount] = useState(1);
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs(), dayjs()]);
   const [disabledDates, setDisabledDates] = useState<Dayjs[]>([]);
+
+  const navigate = useNavigate();
 
   const onBack = () => {
     setStep((value) => value - 1);
@@ -79,7 +80,7 @@ function SearchModal() {
     setStep(STEPS.LOCATION);
     searchModel.onClose();
 
-    history.push(url); // Thay thế navigate bằng history.push
+    navigate(url); // Thay thế navigate bằng history.push
   }, [step, searchModel, location, guestCount, roomCount, bathroomCount, dateRange, onNext, params]);
 
   const actionLabel = useMemo(() => {

@@ -5,9 +5,11 @@ const BASE_URL = CONFIG.API.BASE_URL;
 const API_ENDPOINTS = {
   // User Endpoints
   USER: {
-    PROFILE: `${BASE_URL}/users/profile`,
-    BOOKINGS: `${BASE_URL}/users/bookings`,
-    FAVORITES: `${BASE_URL}/users/favorites`,
+    PROFILE: `${BASE_URL}/account-setting/personal-info`,
+    BOOKINGS: `${BASE_URL}/account-setting/reservation`,
+    FAVORITES: `${BASE_URL}/account-setting/favorites`,
+    LOGIN_SECURITY: `${BASE_URL}/account-setting/login-and-security`,
+    ACCOUNT_SETTING: `${BASE_URL}/account-setting`,
   },
 
   // Host Endpoints

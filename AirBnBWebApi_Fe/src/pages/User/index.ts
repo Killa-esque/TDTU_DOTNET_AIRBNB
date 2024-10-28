@@ -1,9 +1,0 @@
-// export * from './Booking';
-// export * from './Detail';
-// export * from './Favorite';
-// export * from './Home';
-// export * from './Login';
-// export * from './MyBooking';
-// export * from './Profile';
-// export * from './Register';
-// export * from './Search';

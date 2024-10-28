@@ -1,9 +1,10 @@
+// axiosClient.ts
 import { JwtPayload } from "@/types";
 import axios from "axios";
 import { decodeToken, isTokenExpired } from "@/utils/jwt";
 import { CONFIG } from "@/config/appConfig";
-import { history } from "@/main";
 import { notify } from "@/services/notifications/notificationService"; // Import notify
+import { navigate } from "@/services/navigation/navigationService";
 
 const axiosClient = axios.create({
   baseURL: CONFIG.API.BASE_URL,
@@ -23,7 +24,7 @@ axiosClient.interceptors.request.use(
 
       if (isTokenExpired(accessToken)) {
         notify('Token has expired. Please login again.', 'error'); // Sử dụng notify
-        history.push('/login');
+        navigate('/login'); // Thay thế history.push bằng navigate
         return Promise.reject(new Error('Token has expired'));
       }
 
@@ -59,10 +60,10 @@ axiosClient.interceptors.response.use(
 
     if (status === 401) {
       notify('You are not authorized. Please login.', 'error'); // Sử dụng notify
-      history.push('/login');
+      navigate('/login'); // Thay thế history.push bằng navigate
     } else if (status === 403) {
       notify('Access denied. You do not have permission to access this resource.', 'warning'); // Sử dụng notify
-      history.push('/forbidden');
+      navigate('/forbidden'); // Thay thế history.push bằng navigate
     } else if (status === 500) {
       notify('Server error. Please try again later.', 'error'); // Sử dụng notify
     }

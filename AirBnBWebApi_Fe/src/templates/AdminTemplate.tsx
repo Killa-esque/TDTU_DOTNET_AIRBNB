@@ -1,60 +1,53 @@
 // src/templates/AdminTemplate.tsx
-import { useContext, useState } from "react";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Layout, Drawer } from "antd";
-import { AuthContext } from "@/contexts";
+import { useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
+import { Drawer } from "antd";
 import { Footer, Header, SideNav } from "@/components/Admin/Layout";
 
-const { Header: AntHeader, Sider } = Layout;
-
 function AdminTemplate() {
-  const { user } = useContext(AuthContext);
-  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
-  const { pathname } = useLocation();
+  const [visible, setVisible] = useState(false);
+  const openDrawer = () => setVisible(!visible);
 
-  const toggleDrawer = () => setDrawerVisible(!drawerVisible);
 
-  if (!user) {
-    return <Navigate to="/login" />;
-  }
-
+  let { pathname } = useLocation();
   return (
-    <Layout className="layout-dashboard">
+    <div className="flex h-screen p-5">
+      {/* Sidebar - Mobile Drawer */}
       <Drawer
-        title={null}
         placement="left"
         closable={false}
-        onClose={() => setDrawerVisible(false)}
-        open={drawerVisible}
+        onClose={() => setVisible(false)}
+        open={visible}
         width={250}
-        className="drawer-sidebar"
+        className="block lg:hidden"
+        bodyStyle={{ padding: 0 }}
       >
-        <SideNav />
+        <div className="shadow-lg rounded-lg overflow-hidden">
+          <SideNav />
+        </div>
       </Drawer>
 
-      <Sider
-        breakpoint="lg"
-        collapsedWidth="0"
-        onBreakpoint={(broken) => {
-          if (broken) setDrawerVisible(false);
-        }}
-        trigger={null}
-        width={250}
-        theme="light"
-        className="sider-primary ant-layout-sider-primary"
-      >
+      {/* Sidebar - Desktop */}
+      <div className="hidden lg:flex flex-shrink-0 shadow-lg rounded-lg">
         <SideNav />
-      </Sider>
+      </div>
 
-      <Layout>
-        <AntHeader>
-          <Header onPress={toggleDrawer} name={pathname} subName={pathname} />
-        </AntHeader>
+      {/* Main Content */}
+      <div className="flex flex-col w-full bg-white shadow-lg rounded-lg ml-5">
+        {/* Header */}
+        <div className={`w-full sticky top-0 z-50 shadow-md rounded-t-lg`}>
+          <Header onPress={openDrawer} name={pathname} subName={pathname} />
+        </div>
 
-        <Outlet />
+        {/* Page Content */}
+        <div className="flex-1 overflow-auto p-4">
+          <Outlet />
+        </div>
+
+        {/* Footer */}
         <Footer />
-      </Layout>
-    </Layout>
+      </div>
+    </div>
   );
 }
 
